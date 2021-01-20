@@ -1,5 +1,7 @@
 Description.java
  Description
+Property.java
+ Property
 TFUtils.java
  TFUtils
  TFUtils$GraphBuilder
