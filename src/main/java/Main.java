@@ -1,4 +1,3 @@
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.image.Image;
@@ -18,12 +17,12 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import javafx.application.Application;
-
 public class Main extends Application {
     public static void main(String[] argv) throws IOException {
         launch(argv);
+
         TFUtils utils = new TFUtils();
-        BufferedImage bImage = ImageIO.read(new File("src/inception5h/tensorPics/suncokret.jpg"));
+        BufferedImage bImage = ImageIO.read(new File("tensorPics/suncokret.jpg"));
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ImageIO.write(bImage, "jpg", bos);
         byte[] data = bos.toByteArray();
@@ -50,6 +49,7 @@ public class Main extends Application {
         btn.setOnAction((action) -> {
             System.out.println("Hello World!");
         });
+
         ImageView image = new ImageView();
         image.setImage(new Image(getClass().getResource("inception5h/tensorPics/jack.jpg").toExternalForm()));
         image.setFitHeight(100);
@@ -60,4 +60,5 @@ public class Main extends Application {
         primaryStage.setScene(new Scene(root, 600, 600));
         primaryStage.show();
     }
+
 }
