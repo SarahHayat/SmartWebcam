@@ -27,7 +27,8 @@ public class Main extends Application {
     public static Property getProperty() throws IOException {
         TFUtils utils = new TFUtils();
         Property props = new Property();
-        byte [] data = Files.readAllBytes(Paths.get("src/main/resources/tensorPics/suncokret.jpg"));
+        props.setImage("tensorPics/suncokret.jpg");
+        byte [] data = Files.readAllBytes(Paths.get("src/main/resources/" + props.getImage()));
 
         String filePath = "src/inception5h/tensorflow_inception_graph.pb";
 
@@ -48,7 +49,7 @@ public class Main extends Application {
     public void start(Stage primaryStage) throws Exception {
         Property property = getProperty();
         primaryStage.setTitle("Hello World!");
-        Image image = new Image("tensorPics/jack.jpg");
+        Image image = new Image(String.valueOf(getClass().getResource(property.getImage())));
         ImageView imageView = new ImageView();
         imageView.setImage(image);
         imageView.setFitHeight(100);
