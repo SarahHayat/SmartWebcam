@@ -33,6 +33,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.concurrent.Executors;
+
 import static org.bytedeco.opencv.global.opencv_core.cvFlip;
 import static org.bytedeco.opencv.helper.opencv_imgcodecs.cvSaveImage;
 
@@ -50,8 +51,7 @@ import javafx.application.Application;
 public class Main extends Application {
     private Property props = new Property();
     private final Java2DFrameConverter java2DFrameConverter = new Java2DFrameConverter();
-    final int INTERVALCAM = 1;///you may use interval
-
+    final int INTERVALCAM = 1000;///you may use interval
 
     public static void main(String[] argv) throws IOException {
         launch(argv);
@@ -61,7 +61,7 @@ public class Main extends Application {
         TFUtils utils = new TFUtils();
         byte[] data;
         if (props.getPath() != null) {
-            System.out.println("LE PAAAAAATHHHH "+ props.getPath());
+            System.out.println("LE PAAAAAATHHHH " + props.getPath());
             data = Files.readAllBytes(props.getPath());
         } else {
             data = Files.readAllBytes(Paths.get("src/main/resources/tensorPics/jack.jpg"));
@@ -90,7 +90,7 @@ public class Main extends Application {
 
         VBox boxProperties = new VBox(5);
 
-        VBox boxCamera = new VBox();
+        VBox boxCamera = new VBox(5);
 
         Button buttonSave = new Button();
         buttonSave.setText("Sauvegarder");
@@ -113,9 +113,13 @@ public class Main extends Application {
 
         Label pathLabel = new Label();
 
-        Label descriptionLabel = new Label();
+        TextField descriptionLabel = new TextField();
+        descriptionLabel.setEditable(false);
+        descriptionLabel.setDisable(true);
 
-        Label percentLabel = new Label();
+        TextField percentLabel = new TextField();
+        percentLabel.setEditable(false);
+        percentLabel.setDisable(true);
 
         TextField tfProba = new TextField();
 
@@ -136,7 +140,6 @@ public class Main extends Application {
                     IplImage img;
                     int i = 0;
                     try {
-                        System.out.println("_____DESCRIPTION______ = "+ props.getDescription());
                         while (true) {
                             frame = opengrabber.grabFrame();
                             img = converter.convert(frame);
@@ -150,14 +153,30 @@ public class Main extends Application {
 
                             props.setPath(Paths.get("images/picture.jpg"));
                             props.setBufferedImage(bufferedImage);
-                            if(props.getPath() != null) {
-                                getProperty(props);
+                            getProperty(props);
+
+                            if (props.getDescription() != null) {
+                                System.out.println(i++ + " : " + props.getDescription());
+                                buttonSave.setDisable(false);
+                                buttonFolder.setDisable(false);
+                                descriptionLabel.setText(props.getDescription());
+                                percentLabel.setText(String.valueOf(props.getProba()));
+
+                            } else {
+                                buttonSave.setDisable(true);
+                                buttonFolder.setDisable(true);
+                                descriptionLabel.setText("");
+                                percentLabel.setText("");
+
                             }
                         }
+
 
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
+                    descriptionLabel.setText(props.getDescription());
+                    percentLabel.setText(String.valueOf(props.getProba()));
                 }
             });
             imageView.setFitWidth(200);
@@ -173,6 +192,7 @@ public class Main extends Application {
             if (props.getFile() != null) {
                 pathLabel.setText(props.getFile().getPath());
             }
+
         }));
 
         buttonSave.setOnAction((action -> {
@@ -190,7 +210,7 @@ public class Main extends Application {
 
         EventHandler<ActionEvent> event = (ActionEvent e) -> {
             System.out.println("LA DESCRIPTIOOOOOOOON " + props.getDescription());
-            if(props.getDescription() != null) {
+            if (props.getDescription() != null) {
                 if (definitionLabel.getText().contains(props.getDescription()) && props.getProba() >= Float.parseFloat(tfProba.getText())) {
                     descriptionLabel.setText(props.getDescription());
                     percentLabel.setText(String.valueOf(props.getProba()));
@@ -204,6 +224,7 @@ public class Main extends Application {
                 }
             }
         };
+
 
         buttonProcess.setOnAction(event);
 
@@ -227,7 +248,7 @@ public class Main extends Application {
         GridPane.setConstraints(boxDescLabels, 0, 1);
 
         root.getChildren().add(boxProperties);
-        GridPane.setConstraints(boxProperties, 1, 1);
+        GridPane.setConstraints(boxProperties, 0, 3);
 
         root.getChildren().add(boxCamera);
         GridPane.setConstraints(boxCamera, 0, 2);
