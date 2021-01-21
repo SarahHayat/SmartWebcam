@@ -1,5 +1,6 @@
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.nio.file.Path;
 
 public class Property {
@@ -8,6 +9,16 @@ public class Property {
     float proba;
     Path path;
     BufferedImage bufferedImage;
+    File file;
+
+
+    public File getFile() {
+        return file;
+    }
+
+    public void setFile(File file) {
+        this.file = file;
+    }
 
     public BufferedImage getBufferedImage() {
         return bufferedImage;

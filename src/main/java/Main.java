@@ -1,5 +1,8 @@
 import com.sun.javafx.logging.PlatformLogger;
+import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -59,32 +62,38 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        primaryStage.setTitle("Hello World!");
-//        Image image = new Image(String.valueOf(getClass().getResource(property.getImage())));
-//        ImageView imageView = new ImageView();
-//        imageView.setImage(image);
-//        imageView.setFitHeight(100);
-//        imageView.setFitWidth(100);
+        primaryStage.setTitle("Smart Webcam");
 
         GridPane root = new GridPane();
         Button buttonSave = new Button();
         Button buttonUpload = new Button();
-        buttonSave.setText("Process");
+        Button buttonFolder = new Button();
+        buttonSave.setText("Sauvegarder");
         buttonUpload.setText("Importer");
+        buttonFolder.setText("Choix du dossier");
+        buttonSave.setDisable(true);
+        buttonFolder.setDisable(true);
+        TextField definition = new TextField();
+
+        Label label = new Label();
+        Label labelProba = new Label();
+        buttonFolder.setOnAction((action->{
+            FileChooser fileChooser = new FileChooser();
+
+            //Set extension filter for text files
+            FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("JPG files (*.jpg)", "*.jpg");
+            fileChooser.getExtensionFilters().add(extFilter);
+            System.out.println(fileChooser);
+            //Show save file dialog
+            File file = fileChooser.showSaveDialog(primaryStage);
+            System.out.println("ITS FILE" + file);
+//            File initialImage = new File(extFilter + "/" + props.getPath().getFileName());
+            props.setFile(file);
+
+        }));
         buttonSave.setOnAction((action -> {
             try {
                 save(props);
-                getProperty(props);
-                Label label = new Label();
-                Label labelProba = new Label();
-                label.setText(props.getDescription());
-                labelProba.setText(String.valueOf(props.getProba()));
-                root.getChildren().add(label);
-                root.getChildren().add(labelProba);
-                GridPane.setConstraints(labelProba, 1, 2);
-                GridPane.setConstraints(label, 1, 1);
-
-
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -102,37 +111,52 @@ public class Main extends Application {
                 GridPane.setConstraints(imageView, 1, 0);
                 root.getChildren().add(imageView);
                 props.setPath(file.toPath());
-                System.out.println("CECI EST UN PATH " + props.getPath());
                 props.setBufferedImage(bufferedImage);
+                getProperty(props);
+                label.setText(props.getDescription());
+                labelProba.setText(String.valueOf(props.getProba()));
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }));
+        EventHandler<ActionEvent> event = (ActionEvent e) -> {
+            if(definition.getText().contains(props.getDescription())){
+                buttonSave.setDisable(false);
+                buttonFolder.setDisable(false);
+            }else{
+                buttonSave.setDisable(true);
+                buttonFolder.setDisable(true);
+            }
+        };
+
+        // when enter is pressed
+        definition.setOnAction(event);
+
+
+        root.getChildren().add(label);
+        root.getChildren().add(labelProba);
+        root.getChildren().add(definition);
+        GridPane.setConstraints(labelProba, 1, 2);
+        GridPane.setConstraints(label, 1, 1);
         GridPane.setConstraints(buttonSave, 2, 1);
         GridPane.setConstraints(buttonUpload, 0, 0);
+        GridPane.setConstraints(buttonFolder, 0, 1);
+        GridPane.setConstraints(definition, 0, 2);
 
         root.getChildren().add(buttonSave);
         root.getChildren().add(buttonUpload);
+        root.getChildren().add(buttonFolder);
 
         primaryStage.setScene(new Scene(root, 600, 600));
         primaryStage.show();
     }
 
-    private static void save(Property property) {
-
+    private static void save(Property property) throws IOException {
         try {
-            Path path = Paths.get("src/main/resources/output");
-            Files.createDirectories(path);
-            System.out.println("Directory is created!");
-            File initialImage = new File(path + "/" + property.getPath().getFileName());
-            ImageIO.write(property.getBufferedImage(), "jpg", initialImage);
-            System.out.println("DANS SAVE"+property.getPath());
+            ImageIO.write(property.getBufferedImage(), "jpg", property.getFile());
         } catch (IOException e) {
-
-            System.err.println("Failed to create directory!" + e.getMessage());
-
+            e.printStackTrace();
         }
+
     }
-
-
 }
