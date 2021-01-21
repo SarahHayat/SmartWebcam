@@ -10,31 +10,21 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.image.Image;
-import javafx.scene.layout.GridPane;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.bytedeco.javacv.*;
 import org.bytedeco.opencv.opencv_core.IplImage;
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
 import org.tensorflow.Tensor;
-
 import javafx.application.Application;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import org.bytedeco.javacv.Frame;
-
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.concurrent.Executors;
-
-import static org.bytedeco.opencv.helper.opencv_imgcodecs.cvSaveImage;
-
 import javax.imageio.ImageIO;
 
 import java.nio.file.Files;
@@ -51,7 +41,7 @@ public class Main extends Application {
     private BufferedImage redImage;
     private BufferedImage greenImage;
     private BufferedImage blueImage;
-
+    private OpenCVFrameGrabber opengrabber = new OpenCVFrameGrabber(0);
     private Object value;
 
     public static void main(String[] argv) throws IOException {
@@ -83,7 +73,7 @@ public class Main extends Application {
     public void start(Stage primaryStage) throws Exception {
         primaryStage.setTitle("Smart Webcam");
 
-        GridPane root = new GridPane();
+        BorderPane root = new BorderPane();
 
         VBox boxPicture = new VBox(5);
 
@@ -145,7 +135,6 @@ public class Main extends Application {
 
         open.setOnAction((action -> {
             ImageView imageView = new ImageView();
-            OpenCVFrameGrabber opengrabber = new OpenCVFrameGrabber(0);
             try {
                 opengrabber.start();
             } catch (FrameGrabber.Exception e) {
@@ -203,12 +192,12 @@ public class Main extends Application {
                     percentLabel.setText(String.valueOf(props.getProba()));
                 }
             });
-            imageView.setFitWidth(200);
-            imageView.setFitHeight(200);
-            boxCamera.setMaxWidth(200);
-            boxCamera.setMaxHeight(200);
+            imageView.setFitWidth(400);
+            imageView.setFitHeight(400);
+            boxCamera.setMaxWidth(400);
+            boxCamera.setMaxHeight(400);
             boxCamera.getChildren().add(imageView);
-            GridPane.setConstraints(boxCamera, 0, 4);
+            root.setCenter(boxCamera);
         }));
 
         buttonFolder.setOnAction((action -> {
@@ -229,7 +218,16 @@ public class Main extends Application {
         }));
 
         buttonUpload.setOnAction((action -> {
-            upload(props, boxPicture);
+            try {
+                opengrabber.stop();
+                boxCamera.getChildren().clear();
+                descriptionLabel.setText("");
+                percentLabel.setText("");
+            } catch (FrameGrabber.Exception e) {
+                e.printStackTrace();
+            }
+            upload(props, root);
+
         }));
 
         EventHandler<ActionEvent> event = (ActionEvent e) -> {
@@ -252,8 +250,8 @@ public class Main extends Application {
 
         buttonProcess.setOnAction(event);
 
-        boxPicture.getChildren().addAll(buttonFolder, buttonSave, pathLabel);
-        boxPicture.setPadding(new Insets(5, 5, 5, 50));
+        boxPicture.getChildren().addAll(buttonFolder,buttonUpload,open ,buttonSave, pathLabel);
+        boxPicture.setPadding(new Insets(40, 5, 5, 50));
 
         boxDescLabels.getChildren().addAll( label1, definitionLabel, label2, tfProba, buttonProcess);
         boxDescLabels.setPadding(new Insets(5, 5, 5, 50));
@@ -261,25 +259,18 @@ public class Main extends Application {
         boxProperties.getChildren().addAll(label1, descriptionLabel, label2, percentLabel);
         boxProperties.setPadding(new Insets(5, 5, 5, 50));
 
-        root.getChildren().add(buttonUpload);
-        GridPane.setConstraints(buttonUpload, 4, 5);
+//        root.getChildren().add(buttonUpload);
+//        GridPane.setConstraints(buttonUpload, 4, 5);
 
-        root.getChildren().add(open);
-        GridPane.setConstraints(open, 4, 4);
+        root.setBottom(boxPicture);
 
-        root.getChildren().add(boxPicture);
-        GridPane.setConstraints(boxPicture, 0, 0);
+        root.setLeft(boxDescLabels);
 
-        root.getChildren().add(boxDescLabels);
-        GridPane.setConstraints(boxDescLabels, 0, 1);
+        root.setRight(boxProperties);
 
-        root.getChildren().add(boxProperties);
-        GridPane.setConstraints(boxProperties, 0, 3);
+        root.setCenter(boxCamera);
 
-        root.getChildren().add(boxCamera);
-
-        root.getChildren().add(comboBox);
-        GridPane.setConstraints(comboBox, 1, 0);
+        root.setTop(comboBox);
 
 
         primaryStage.setScene(new Scene(root, 1000, 600));
@@ -343,7 +334,7 @@ public class Main extends Application {
 
     }
 
-    public static void upload(Property props, VBox picture) {
+    public static void upload(Property props, BorderPane root) {
         FileChooser fileChooser = new FileChooser();
         File file = fileChooser.showOpenDialog(null);
         try {
@@ -353,8 +344,7 @@ public class Main extends Application {
             imageView.setImage(image1);
             imageView.setFitHeight(300);
             imageView.setFitWidth(300);
-            imageView.setStyle("-fx-background-color: RED");
-            picture.getChildren().add(imageView);
+            root.setCenter(imageView);
             props.setPath(file.toPath());
             props.setBufferedImage(bufferedImage);
             getProperty(props);
@@ -374,23 +364,28 @@ public class Main extends Application {
 
     public BufferedImage setFilter(Object value, BufferedImage bufferedImage){
         setOriginalImage(bufferedImage);
-        switch (value.toString()){
-            case "beagle/red":
-                System.out.println("APPLY RED FILTER");
-                bufferedImage = getRedImage();
-                break;
-            case "mouse/blue":
-                System.out.println("APPLY BLUE FILTER");
-                bufferedImage = getBlueImage();
-                break;
-            case "daisy/green":
-                System.out.println("APPLY GREEN FILTER");
-                bufferedImage = getGreenImage();
-                break;
-            default:
-                System.out.println("APPLY NO FILTER");
-                bufferedImage = bufferedImage;
-                break;
+        if(value == null){
+            bufferedImage = bufferedImage;
+        }
+        else{
+            switch (value.toString()){
+                case "beagle/red":
+                    System.out.println("APPLY RED FILTER");
+                    bufferedImage = getRedImage();
+                    break;
+                case "mouse/blue":
+                    System.out.println("APPLY BLUE FILTER");
+                    bufferedImage = getBlueImage();
+                    break;
+                case "daisy/green":
+                    System.out.println("APPLY GREEN FILTER");
+                    bufferedImage = getGreenImage();
+                    break;
+                default:
+                    System.out.println("APPLY NO FILTER");
+                    bufferedImage = bufferedImage;
+                    break;
+            }
         }
         return bufferedImage;
     }
