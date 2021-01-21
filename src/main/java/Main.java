@@ -25,7 +25,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.Executors;
 import javax.imageio.ImageIO;
-
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -51,11 +50,11 @@ public class Main extends Application {
     private VBox boxDescLabels = new VBox(5);
     private VBox boxProperties = new VBox(5);
     private VBox boxCamera = new VBox(5);
-    private Button buttonSave = new Button();
-    private Button buttonUpload = new Button();
-    private Button buttonFolder = new Button();
-    private Button buttonProcess = new Button();
-    private Button open = new Button();
+    private Button buttonSave = new Button("Sauvegarder");
+    private Button buttonUpload = new Button("Importer");
+    private Button buttonFolder = new Button("Choix du dossier");
+    private Button buttonProcess = new Button("Process");
+    private Button open = new Button("Caméra");
     private TextField definitionTf = new TextField();
     private Label pathLabel = new Label();
     private TextField descriptionTf = new TextField();
@@ -74,7 +73,6 @@ public class Main extends Application {
         TFUtils utils = new TFUtils();
         byte[] data;
         if (props.getPath() != null) {
-            System.out.println("LE PAAAAAATHHHH " + props.getPath());
             data = Files.readAllBytes(props.getPath());
         } else {
             data = Files.readAllBytes(Paths.get("src/main/resources/tensorPics/jack.jpg"));
@@ -98,22 +96,10 @@ public class Main extends Application {
 
         comboBox.setValue("Filtres");
         comboBox.setItems(liste);
-
-        buttonSave.setText("Sauvegarder");
         buttonSave.setDisable(true);
-
-        buttonUpload.setText("Importer");
-
-        buttonFolder.setText("Choix du dossier");
         buttonFolder.setDisable(true);
-
-        buttonProcess.setText("Process");
-
-        open.setText("Caméra");
-
         descriptionTf.setEditable(false);
         descriptionTf.setDisable(true);
-
         percentTf.setEditable(false);
         percentTf.setDisable(true);
 
@@ -122,7 +108,7 @@ public class Main extends Application {
         }));
 
         open.setOnAction((action -> {
-           openCam();
+            openCam();
         }));
 
         buttonFolder.setOnAction((action -> {
@@ -152,7 +138,7 @@ public class Main extends Application {
         }));
 
         EventHandler<ActionEvent> event = (ActionEvent e) -> {
-           process();
+            process();
         };
         buttonProcess.setOnAction(event);
         addToRoot();
@@ -166,6 +152,7 @@ public class Main extends Application {
         bufferedImage = setFilter(value, bufferedImage);
         return SwingFXUtils.toFXImage(bufferedImage, null);
     }
+
     private BufferedImage createColorImage(BufferedImage originalImage, int mask) {
         BufferedImage colorImage = new BufferedImage(originalImage.getWidth(),
                 originalImage.getHeight(), originalImage.getType());
@@ -203,7 +190,7 @@ public class Main extends Application {
         return blueImage;
     }
 
-    private void openCam(){
+    private void openCam() {
         ImageView imageView = new ImageView();
         try {
             opengrabber.start();
@@ -226,7 +213,7 @@ public class Main extends Application {
                         Thread.sleep(INTERVALCAM);
                         bufferedImage = setFilter(value, bufferedImage);
                         props.setBufferedImage(bufferedImage);
-                        props.setPath(Paths.get("images" + File.separator + "picture"+i +".jpg"));
+                        props.setPath(Paths.get("images" + File.separator + "picture" + i + ".jpg"));
                         save(props);
                         getProperty(props);
                         if (props.getDescription() != null) {
@@ -259,8 +246,8 @@ public class Main extends Application {
         root.setCenter(boxCamera);
     }
 
-    private void addToRoot(){
-        boxPicture.getChildren().addAll(buttonFolder,buttonUpload,open ,buttonSave, pathLabel);
+    private void addToRoot() {
+        boxPicture.getChildren().addAll(buttonFolder, buttonUpload, open, buttonSave, pathLabel);
         boxPicture.setPadding(new Insets(40, 5, 5, 50));
 
         boxDescLabels.getChildren().addAll(definitionLabel, definitionTf, PercentLabel, ProbaTf, buttonProcess);
@@ -278,10 +265,9 @@ public class Main extends Application {
 
     private void save(Property property) throws IOException {
         try {
-            if(property.getFile() == null){
-                ImageIO.write(property.getBufferedImage() , "jpg", property.getPath().toFile());
-            }
-            else {
+            if (property.getFile() == null) {
+                ImageIO.write(property.getBufferedImage(), "jpg", property.getPath().toFile());
+            } else {
                 ImageIO.write(property.getBufferedImage(), "jpg", property.getFile());
                 System.out.println("GET FILE  " + property.getFile());
             }
@@ -291,7 +277,7 @@ public class Main extends Application {
 
     }
 
-    private void process(){
+    private void process() {
         if (props.getDescription() != null) {
             if (definitionTf.getText().contains(props.getDescription()) && props.getProba() >= Float.parseFloat(ProbaTf.getText())) {
                 descriptionTf.setText(props.getDescription());
@@ -338,13 +324,12 @@ public class Main extends Application {
 
     }
 
-    private BufferedImage setFilter(Object value, BufferedImage bufferedImage){
+    private BufferedImage setFilter(Object value, BufferedImage bufferedImage) {
         setOriginalImage(bufferedImage);
-        if(value == null){
+        if (value == null) {
             bufferedImage = bufferedImage;
-        }
-        else{
-            switch (value.toString()){
+        } else {
+            switch (value.toString()) {
                 case RED:
                     System.out.println("APPLY RED FILTER");
                     bufferedImage = getRedImage();
