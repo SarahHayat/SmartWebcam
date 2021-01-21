@@ -2,16 +2,40 @@ import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.image.*;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import org.bytedeco.javacv.*;
+import org.bytedeco.opencv.opencv_core.IplImage;
+import org.tensorflow.Tensor;
+
+import javafx.application.Application;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.Scene;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.GridPane;
-import javafx.stage.FileChooser;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import org.tensorflow.Tensor;
+import org.bytedeco.javacv.*;
+import org.bytedeco.javacv.Frame;
+import org.bytedeco.opencv.opencv_core.IplImage;
+
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.concurrent.Executors;
+
+import static org.bytedeco.opencv.global.opencv_core.cvFlip;
+import static org.bytedeco.opencv.helper.opencv_imgcodecs.cvSaveImage;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -20,11 +44,14 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 import javafx.application.Application;
 
 public class Main extends Application {
     private Property props = new Property();
+    private final Java2DFrameConverter java2DFrameConverter = new Java2DFrameConverter();
+    final int INTERVALCAM = 1000;///you may use interval
 
     public static void main(String[] argv) throws IOException {
         launch(argv);
@@ -34,6 +61,7 @@ public class Main extends Application {
         TFUtils utils = new TFUtils();
         byte[] data;
         if (props.getPath() != null) {
+            System.out.println("LE PAAAAAATHHHH " + props.getPath());
             data = Files.readAllBytes(props.getPath());
         } else {
             data = Files.readAllBytes(Paths.get("src/main/resources/tensorPics/jack.jpg"));
@@ -56,6 +84,14 @@ public class Main extends Application {
 
         GridPane root = new GridPane();
 
+        VBox boxPicture = new VBox(5);
+
+        VBox boxDescLabels = new VBox(5);
+
+        VBox boxProperties = new VBox(5);
+
+        VBox boxCamera = new VBox(5);
+
         Button buttonSave = new Button();
         buttonSave.setText("Sauvegarder");
         buttonSave.setDisable(true);
@@ -70,25 +106,93 @@ public class Main extends Application {
         Button buttonProcess = new Button();
         buttonProcess.setText("Process");
 
-        TextField definition = new TextField();
+        Button open = new Button();
+        open.setText("Cam");
 
-        Label path = new Label();
+        TextField definitionLabel = new TextField();
 
-        Label label = new Label();
+        Label pathLabel = new Label();
 
-        Label labelProba = new Label();
+        TextField descriptionLabel = new TextField();
+        descriptionLabel.setEditable(false);
+        descriptionLabel.setDisable(true);
+
+        TextField percentLabel = new TextField();
+        percentLabel.setEditable(false);
+        percentLabel.setDisable(true);
 
         TextField tfProba = new TextField();
 
-        buttonFolder.setOnAction((action -> {
-            FileChooser fileChooser = new FileChooser();
-            FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("JPG files (*.jpg)", "*.jpg");
-            fileChooser.getExtensionFilters().add(extFilter);
-            File file = fileChooser.showSaveDialog(primaryStage);
-            props.setFile(file);
-            if (props.getFile() != null) {
-                path.setText(props.getFile().getPath());
+        open.setOnAction((action -> {
+            ImageView imageView = new ImageView();
+            OpenCVFrameGrabber opengrabber = new OpenCVFrameGrabber(0);
+            try {
+                opengrabber.start();
+            } catch (FrameGrabber.Exception e) {
+                e.printStackTrace();
             }
+            Executors.newSingleThreadExecutor().execute(new Runnable() {
+                @Override
+                public void run() {
+                    Frame frame = null;
+                    new File("images").mkdir();
+                    OpenCVFrameConverter.ToIplImage converter = new OpenCVFrameConverter.ToIplImage();
+                    IplImage img;
+                    int i = 0;
+                    try {
+                        while (true) {
+                            frame = opengrabber.grabFrame();
+                            img = converter.convert(frame);
+                            //save
+//                            cvSaveImage("images" + File.separator + (i++) + "-aa.jpg", img);
+                            BufferedImage bufferedImage = java2DFrameConverter.getBufferedImage(frame);
+                            imageView.setImage(frameToImage(frame));
+
+                            Thread.sleep(INTERVALCAM);
+                            cvSaveImage("images" + File.separator + "picture.jpg", img);
+
+                            props.setPath(Paths.get("images/picture.jpg"));
+                            props.setBufferedImage(bufferedImage);
+                            getProperty(props);
+
+                            if (props.getDescription() != null) {
+                                System.out.println(i++ + " : " + props.getDescription());
+                                buttonSave.setDisable(false);
+                                buttonFolder.setDisable(false);
+                                descriptionLabel.setText(props.getDescription());
+                                percentLabel.setText(String.valueOf(props.getProba()));
+
+                            } else {
+                                buttonSave.setDisable(true);
+                                buttonFolder.setDisable(true);
+                                descriptionLabel.setText("");
+                                percentLabel.setText("");
+
+                            }
+                        }
+
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    descriptionLabel.setText(props.getDescription());
+                    percentLabel.setText(String.valueOf(props.getProba()));
+                }
+            });
+            imageView.setFitWidth(200);
+            imageView.setFitHeight(200);
+            boxCamera.setMaxWidth(200);
+            boxCamera.setMaxHeight(200);
+            boxCamera.getChildren().add(imageView);
+            GridPane.setConstraints(boxCamera, 0, 4);
+        }));
+
+        buttonFolder.setOnAction((action -> {
+            chooseFolder(props, primaryStage);
+            if (props.getFile() != null) {
+                pathLabel.setText(props.getFile().getPath());
+            }
+
         }));
 
         buttonSave.setOnAction((action -> {
@@ -101,70 +205,62 @@ public class Main extends Application {
         }));
 
         buttonUpload.setOnAction((action -> {
-            FileChooser fileChooser = new FileChooser();
-            File file = fileChooser.showOpenDialog(null);
-            try {
-                BufferedImage bufferedImage = ImageIO.read(file);
-                WritableImage image1 = SwingFXUtils.toFXImage(bufferedImage, null);
-                ImageView imageView = new ImageView();
-                imageView.setImage(image1);
-                imageView.setFitHeight(300);
-                imageView.setFitWidth(300);
-                GridPane.setConstraints(imageView, 1, 0);
-                root.getChildren().add(imageView);
-                props.setPath(file.toPath());
-                props.setBufferedImage(bufferedImage);
-                getProperty(props);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            upload(props, boxPicture);
         }));
 
         EventHandler<ActionEvent> event = (ActionEvent e) -> {
-            if (definition.getText().contains(props.getDescription()) && props.getProba() >= Float.parseFloat(tfProba.getText())) {
-                label.setText(props.getDescription());
-                labelProba.setText(String.valueOf(props.getProba()));
-                buttonSave.setDisable(false);
-                buttonFolder.setDisable(false);
-            } else {
-                buttonSave.setDisable(true);
-                buttonFolder.setDisable(true);
-                label.setText("");
-                labelProba.setText("");
+            System.out.println("LA DESCRIPTIOOOOOOOON " + props.getDescription());
+            if (props.getDescription() != null) {
+                if (definitionLabel.getText().contains(props.getDescription()) && props.getProba() >= Float.parseFloat(tfProba.getText())) {
+                    descriptionLabel.setText(props.getDescription());
+                    percentLabel.setText(String.valueOf(props.getProba()));
+                    buttonSave.setDisable(false);
+                    buttonFolder.setDisable(false);
+                } else {
+                    buttonSave.setDisable(true);
+                    buttonFolder.setDisable(true);
+                    descriptionLabel.setText("");
+                    percentLabel.setText("");
+                }
             }
         };
 
+
         buttonProcess.setOnAction(event);
 
-        root.getChildren().add(label);
-        GridPane.setConstraints(label, 1, 1);
+        boxPicture.getChildren().addAll(buttonUpload, buttonFolder, buttonSave, pathLabel);
+        boxPicture.setPadding(new Insets(5, 5, 5, 50));
 
-        root.getChildren().add(labelProba);
-        GridPane.setConstraints(labelProba, 1, 3);
 
-        root.getChildren().add(tfProba);
-        GridPane.setConstraints(tfProba, 1, 2);
+        boxDescLabels.getChildren().addAll(definitionLabel, tfProba, buttonProcess);
+        boxDescLabels.setPadding(new Insets(5, 5, 5, 50));
 
-        root.getChildren().add(definition);
-        GridPane.setConstraints(definition, 0, 2);
+        boxProperties.getChildren().addAll(descriptionLabel, percentLabel);
+        boxProperties.setPadding(new Insets(5, 5, 5, 50));
 
-        root.getChildren().add(path);
-        GridPane.setConstraints(path, 0, 3);
+        root.getChildren().add(open);
+        GridPane.setConstraints(open, 4, 4);
 
-        root.getChildren().add(buttonSave);
-        GridPane.setConstraints(buttonSave, 2, 1);
+        root.getChildren().add(boxPicture);
+        GridPane.setConstraints(boxPicture, 0, 0);
 
-        root.getChildren().add(buttonUpload);
-        GridPane.setConstraints(buttonUpload, 0, 0);
+        root.getChildren().add(boxDescLabels);
+        GridPane.setConstraints(boxDescLabels, 0, 1);
 
-        root.getChildren().add(buttonFolder);
-        GridPane.setConstraints(buttonFolder, 0, 1);
+        root.getChildren().add(boxProperties);
+        GridPane.setConstraints(boxProperties, 0, 3);
 
-        root.getChildren().add(buttonProcess);
-        GridPane.setConstraints(buttonProcess, 0, 4);
+        root.getChildren().add(boxCamera);
+        GridPane.setConstraints(boxCamera, 0, 2);
 
-        primaryStage.setScene(new Scene(root, 600, 600));
+
+        primaryStage.setScene(new Scene(root, 1000, 600));
         primaryStage.show();
+    }
+
+    private WritableImage frameToImage(Frame frame) {
+        BufferedImage bufferedImage = java2DFrameConverter.getBufferedImage(frame);
+        return SwingFXUtils.toFXImage(bufferedImage, null);
     }
 
     private static void save(Property property) throws IOException {
@@ -175,4 +271,33 @@ public class Main extends Application {
         }
 
     }
+
+    public static void upload(Property props, VBox picture) {
+        FileChooser fileChooser = new FileChooser();
+        File file = fileChooser.showOpenDialog(null);
+        try {
+            BufferedImage bufferedImage = ImageIO.read(file);
+            WritableImage image1 = SwingFXUtils.toFXImage(bufferedImage, null);
+            ImageView imageView = new ImageView();
+            imageView.setImage(image1);
+            imageView.setFitHeight(300);
+            imageView.setFitWidth(300);
+            picture.getChildren().add(imageView);
+            props.setPath(file.toPath());
+            props.setBufferedImage(bufferedImage);
+            getProperty(props);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void chooseFolder(Property props, Stage primaryStage) {
+        FileChooser fileChooser = new FileChooser();
+        FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("JPG files (*.jpg)", "*.jpg");
+        fileChooser.getExtensionFilters().add(extFilter);
+        File file = fileChooser.showSaveDialog(primaryStage);
+        props.setFile(file);
+
+    }
+
 }
