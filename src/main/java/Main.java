@@ -9,8 +9,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.bytedeco.javacv.*;
@@ -45,10 +44,9 @@ public class Main extends Application {
     private BufferedImage blueImage;
     private OpenCVFrameGrabber opengrabber = new OpenCVFrameGrabber(0);
     private Object value;
-    private BorderPane root = new BorderPane();
-    private VBox boxPicture = new VBox(5);
-    private VBox boxDescLabels = new VBox(5);
-    private VBox boxProperties = new VBox(5);
+    private GridPane root = new GridPane();
+    private RowConstraints rc = new RowConstraints();
+    private ColumnConstraints cc = new ColumnConstraints();
     private VBox boxCamera = new VBox(5);
     private Button buttonSave = new Button("Sauvegarder");
     private Button buttonUpload = new Button("Importer");
@@ -240,27 +238,84 @@ public class Main extends Application {
         });
         imageView.setFitWidth(400);
         imageView.setFitHeight(400);
-//            boxCamera.setMaxWidth(400);
-//            boxCamera.setMaxHeight(400);
-        boxCamera.getChildren().add(imageView);
-        root.setCenter(boxCamera);
+        root.getChildren().add(imageView);
+        GridPane.setConstraints(imageView, 5, 5, 1, 1);
     }
 
     private void addToRoot() {
-        boxPicture.getChildren().addAll(buttonFolder, buttonUpload, open, buttonSave, pathLabel);
-        boxPicture.setPadding(new Insets(40, 5, 5, 50));
+        root.setPadding(new Insets(20));
+        root.setVgap(15);
+        root.setHgap(15);
 
-        boxDescLabels.getChildren().addAll(definitionLabel, definitionTf, PercentLabel, ProbaTf, buttonProcess);
-        boxDescLabels.setPadding(new Insets(5, 5, 5, 50));
+        int ROW_0 = 0;
+        int ROW_1 = 1;
+        int ROW_2 = 2;
+        int ROW_3 = 3;
+        int ROW_4 = 4;
 
-        boxProperties.getChildren().addAll(definitionLabel, descriptionTf, PercentLabel, percentTf);
-        boxProperties.setPadding(new Insets(5, 5, 5, 50));
+        int COL_0 = 0;
+        int COL_1 = 1;
+        int COL_2 = 2;
+        int COL_3 = 3;
 
-        root.setBottom(boxPicture);
-        root.setLeft(boxDescLabels);
-        root.setRight(boxProperties);
-        root.setCenter(boxCamera);
-        root.setTop(comboBox);
+        // ROW 0
+        root.getChildren().add(buttonUpload);
+        GridPane.setConstraints(buttonUpload, COL_0, ROW_0, 1, 1);
+        buttonUpload.setPadding(new Insets(10));
+
+        root.getChildren().add(buttonFolder);
+        GridPane.setConstraints(buttonFolder, COL_1, ROW_0, 1, 1);
+        buttonFolder.setPadding(new Insets(10));
+
+        root.getChildren().add(buttonSave);
+        GridPane.setConstraints(buttonSave, COL_2, ROW_0, 1, 1);
+        buttonSave.setPadding(new Insets(10));
+
+        root.getChildren().add(pathLabel);
+        GridPane.setConstraints(pathLabel, COL_3, ROW_0, 1, 1);
+        pathLabel.setPadding(new Insets(10));
+
+        // ROW 1
+        root.getChildren().add(open);
+        GridPane.setConstraints(open, COL_0, ROW_1, 1, 1);
+        open.setPadding(new Insets(10));
+
+        root.getChildren().add(comboBox);
+        GridPane.setConstraints(comboBox, COL_1, ROW_1, 1, 1);
+        comboBox.setPadding(new Insets(10));
+
+        // ROW 2
+        root.getChildren().add(definitionLabel);
+        GridPane.setConstraints(definitionLabel, COL_0, ROW_2, 1, 1);
+        definitionLabel.setPadding(new Insets(10));
+
+        root.getChildren().add(definitionTf);
+        GridPane.setConstraints(definitionTf, COL_1, ROW_2, 1, 1);
+        definitionTf.setPadding(new Insets(10));
+
+
+        root.getChildren().add(descriptionTf);
+        GridPane.setConstraints(descriptionTf, COL_2, ROW_2, 1, 1);
+        descriptionTf.setPadding(new Insets(10));
+
+        // ROW 3
+        root.getChildren().add(PercentLabel);
+        GridPane.setConstraints(PercentLabel, COL_0, ROW_3, 1, 1);
+        PercentLabel.setPadding(new Insets(10));
+
+        root.getChildren().add(ProbaTf);
+        GridPane.setConstraints(ProbaTf, COL_1, ROW_3, 1, 1);
+        ProbaTf.setPadding(new Insets(10));
+
+        root.getChildren().add(percentTf);
+        GridPane.setConstraints(percentTf, COL_2, ROW_3, 1, 1);
+        percentTf.setPadding(new Insets(10));
+
+        // ROW 4
+        root.getChildren().add(buttonProcess);
+        GridPane.setConstraints(buttonProcess, COL_0, ROW_4, 1, 1);
+        buttonProcess.setPadding(new Insets(10));
+
     }
 
     private void save(Property property) throws IOException {
@@ -293,7 +348,7 @@ public class Main extends Application {
         }
     }
 
-    private void upload(Property props, BorderPane root) {
+    private void upload(Property props, GridPane root) {
         boxCamera.getChildren().clear();
         descriptionTf.setText("");
         percentTf.setText("");
@@ -306,7 +361,8 @@ public class Main extends Application {
             imageView.setImage(image1);
             imageView.setFitHeight(300);
             imageView.setFitWidth(300);
-            root.setCenter(imageView);
+            root.getChildren().add(imageView);
+            GridPane.setConstraints(imageView, 5, 5, 1, 1);
             props.setPath(file.toPath());
             props.setBufferedImage(bufferedImage);
             getProperty(props);
