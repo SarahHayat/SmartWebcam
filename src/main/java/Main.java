@@ -14,7 +14,6 @@ import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.bytedeco.javacv.*;
-import org.bytedeco.opencv.opencv_core.IplImage;
 import org.tensorflow.Tensor;
 import javafx.application.Application;
 import javafx.scene.image.ImageView;
@@ -37,7 +36,6 @@ public class Main extends Application {
     private final String TIGERCAT_BLUE = "Tiger Cat/Blue";
     private final String MOUSE_GREEN = "Mouse/Green";
     private final String NONE = "none";
-
     private final Java2DFrameConverter java2DFrameConverter = new Java2DFrameConverter();
     private OpenCVFrameGrabber opengrabber = new OpenCVFrameGrabber(0);
     private GridPane root = new GridPane();
@@ -45,9 +43,11 @@ public class Main extends Application {
     private BufferedImage redImage;
     private BufferedImage greenImage;
     private BufferedImage blueImage;
+    private Object value;
+
+    // initialize each Node
     private ImageView imageViewCam = new ImageView();
     private ImageView imageViewPicture = new ImageView();
-    private Object value;
     private Button buttonSave = new Button("Sauvegarder");
     private Button buttonUpload = new Button("Importer");
     private Button buttonFolder = new Button("Choix du dossier");
@@ -63,10 +63,20 @@ public class Main extends Application {
     private ComboBox comboBox = new ComboBox();
     private ObservableList<String> liste = FXCollections.observableArrayList();
 
+    /**
+     * Main function
+     * @param argv
+     */
     public static void main(String[] argv) {
         launch(argv);
     }
 
+    /**
+     * Get the property of image saved
+     * @param props
+     * @return props
+     * @throws IOException
+     */
     public static Property getProperty(Property props) throws IOException {
         TFUtils utils = new TFUtils();
         byte[] data;
@@ -87,6 +97,10 @@ public class Main extends Application {
         return props;
     }
 
+    /**
+     * Start the stage and open the window FX
+     * @param primaryStage
+     */
     @Override
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Smart Webcam");
@@ -155,12 +169,25 @@ public class Main extends Application {
         primaryStage.show();
     }
 
+    /**
+     * Convert frame to Image
+     * @param frame
+     * @param value
+     * @return BufferedImage to Image
+     * @throws IOException
+     */
     private WritableImage frameToImage(Frame frame, String value) throws IOException {
         BufferedImage bufferedImage = java2DFrameConverter.getBufferedImage(frame);
         bufferedImage = setFilter(value, bufferedImage);
         return SwingFXUtils.toFXImage(bufferedImage, null);
     }
 
+    /**
+     * Create colored image from bufferedImage WebCam
+     * @param originalImage
+     * @param mask
+     * @return colorImage
+     */
     private BufferedImage createColorImage(BufferedImage originalImage, int mask) {
         BufferedImage colorImage = new BufferedImage(originalImage.getWidth(),
                 originalImage.getHeight(), originalImage.getType());
@@ -174,6 +201,10 @@ public class Main extends Application {
         return colorImage;
     }
 
+    /**
+     * Apply differents color to original image
+     * @param originalImage
+     */
     private void setOriginalImage(BufferedImage originalImage) {
         this.originalImage = originalImage;
         this.redImage = createColorImage(originalImage, 0xFFFF0000);
@@ -181,18 +212,33 @@ public class Main extends Application {
         this.blueImage = createColorImage(originalImage, 0xFF0000FF);
     }
 
+    /**
+     * Apply Red Filter
+     * @return redImage
+     */
     private BufferedImage getRedImage() {
         return redImage;
     }
 
+    /**
+     * Apply Green Filter
+     * @return greenImage
+     */
     private BufferedImage getGreenImage() {
         return greenImage;
     }
 
+    /**
+     * Apply Blue Filter
+     * @return blueImage
+     */
     private BufferedImage getBlueImage() {
         return blueImage;
     }
 
+    /**
+     * Open Camera and save each picture every seconds
+     */
     private void openCam() {
 
         try {
@@ -243,6 +289,9 @@ public class Main extends Application {
         });
     }
 
+    /**
+     * Add each Node to GridPane (root)
+     */
     private void addToRoot() {
         root.setPadding(new Insets(20));
         root.getColumnConstraints().addAll( new ColumnConstraints( 200 ), new ColumnConstraints( 200 ), new ColumnConstraints( 200 ), new ColumnConstraints( 200 ) );
@@ -331,6 +380,11 @@ public class Main extends Application {
 
     }
 
+    /**
+     * Save image to a folder
+     * @param property
+     * @throws IOException
+     */
     private void save(Property property) throws IOException {
         try {
             if (property.getFile() == null) {
@@ -343,6 +397,9 @@ public class Main extends Application {
         }
     }
 
+    /**
+     * Verify if user enter equal description and probability of RDN
+     */
     private void process() {
         if (props.getDescription() != null) {
             if (definitionTf.getText().contains(props.getDescription()) && props.getProba() >= Float.parseFloat(probaTf.getText())) {
@@ -359,6 +416,10 @@ public class Main extends Application {
         }
     }
 
+    /**
+     * Open a new window to choose the process image
+     * @param props
+     */
     private void upload(Property props) {
         imageViewCam.setImage(null);
         descriptionTf.setText(null);
@@ -377,6 +438,11 @@ public class Main extends Application {
         }
     }
 
+    /**
+     *  Open a new window to choose a folder to save image
+     * @param props
+     * @param primaryStage
+     */
     private void chooseFolder(Property props, Stage primaryStage) {
         FileChooser fileChooser = new FileChooser();
         FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("JPG files (*.jpg)", "*.jpg");
@@ -385,6 +451,12 @@ public class Main extends Application {
         props.setFile(file);
     }
 
+    /**
+     * Puts the right filter according to the given value
+     * @param value
+     * @param bufferedImage
+     * @return BufferedImage
+     */
     private BufferedImage setFilter(String value, BufferedImage bufferedImage) {
         setOriginalImage(bufferedImage);
         if (value == null) {
