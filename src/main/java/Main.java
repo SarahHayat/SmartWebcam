@@ -32,41 +32,38 @@ import java.util.List;
 public class Main extends Application {
 
     private Property props = new Property();
-    private final Java2DFrameConverter java2DFrameConverter = new Java2DFrameConverter();
-    final int INTERVALCAM = 1;///you may use interval
+    private final int INTERVALCAM = 1;
     private final String BEAGLE_RED = "Beagle/Red";
     private final String TIGERCAT_BLUE = "Tiger Cat/Blue";
     private final String MOUSE_GREEN = "Mouse/Green";
     private final String NONE = "none";
 
+    private final Java2DFrameConverter java2DFrameConverter = new Java2DFrameConverter();
+    private OpenCVFrameGrabber opengrabber = new OpenCVFrameGrabber(0);
+    private GridPane root = new GridPane();
     private BufferedImage originalImage;
     private BufferedImage redImage;
     private BufferedImage greenImage;
     private BufferedImage blueImage;
-    private OpenCVFrameGrabber opengrabber = new OpenCVFrameGrabber(0);
+    private ImageView imageViewCam = new ImageView();
+    private ImageView imageViewPicture = new ImageView();
     private Object value;
-    private GridPane root = new GridPane();
-    private RowConstraints rc = new RowConstraints();
-    private ColumnConstraints cc = new ColumnConstraints();
-    private VBox boxCamera = new VBox(5);
     private Button buttonSave = new Button("Sauvegarder");
     private Button buttonUpload = new Button("Importer");
     private Button buttonFolder = new Button("Choix du dossier");
     private Button buttonProcess = new Button("Process");
     private Button open = new Button("Caméra");
     private Label pathLabel = new Label();
+    private Label definitionLabel = new Label("Definition");
+    private Label percentLabel = new Label("Pourcentage");
     private TextField definitionTf = new TextField();
     private TextField descriptionTf = new TextField();
     private TextField percentTf = new TextField();
     private TextField probaTf = new TextField();
-    private Label definitionLabel = new Label("Definition");
-    private Label percentLabel = new Label("Pourcentage");
-    private ImageView imageViewCam = new ImageView();
-    private ImageView imageViewPicture = new ImageView();
     private ComboBox comboBox = new ComboBox();
     private ObservableList<String> liste = FXCollections.observableArrayList();
 
-    public static void main(String[] argv) throws IOException {
+    public static void main(String[] argv) {
         launch(argv);
     }
 
@@ -91,7 +88,7 @@ public class Main extends Application {
     }
 
     @Override
-    public void start(Stage primaryStage) throws Exception {
+    public void start(Stage primaryStage) {
         primaryStage.setTitle("Smart Webcam");
         liste.addAll(BEAGLE_RED, TIGERCAT_BLUE, MOUSE_GREEN, NONE);
 
@@ -117,7 +114,6 @@ public class Main extends Application {
             if (props.getFile() != null) {
                 pathLabel.setText(props.getFile().getPath());
             }
-
         }));
 
         buttonSave.setOnAction((action -> {
@@ -138,13 +134,12 @@ public class Main extends Application {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
         }));
 
         buttonUpload.setOnAction((action -> {
             try {
                 opengrabber.stop();
-                upload(props, root);
+                upload(props);
             } catch (FrameGrabber.Exception e) {
                 e.printStackTrace();
             }
@@ -176,12 +171,7 @@ public class Main extends Application {
                 colorImage.setRGB(x, y, pixel);
             }
         }
-
         return colorImage;
-    }
-
-    private BufferedImage getOriginalImage() {
-        return originalImage;
     }
 
     private void setOriginalImage(BufferedImage originalImage) {
@@ -218,10 +208,8 @@ public class Main extends Application {
         Executors.newSingleThreadExecutor().execute(new Runnable() {
             @Override
             public void run() {
-                Frame frame = null;
+                Frame frame;
                 new File("images").mkdir();
-                OpenCVFrameConverter.ToIplImage converter = new OpenCVFrameConverter.ToIplImage();
-                IplImage img;
                 int i = 0;
                 try {
                     while (true) {
@@ -245,7 +233,6 @@ public class Main extends Application {
                             buttonFolder.setDisable(true);
                             descriptionTf.setText("");
                             percentTf.setText("");
-
                         }
                         i++;
                     }
@@ -258,7 +245,6 @@ public class Main extends Application {
 
     private void addToRoot() {
         root.setPadding(new Insets(20));
-//        root.setGridLinesVisible( true );
         root.getColumnConstraints().addAll( new ColumnConstraints( 200 ), new ColumnConstraints( 200 ), new ColumnConstraints( 200 ), new ColumnConstraints( 200 ) );
         root.setVgap(15);
         root.setHgap(15);
@@ -351,12 +337,10 @@ public class Main extends Application {
                 ImageIO.write(property.getBufferedImage(), "jpg", property.getPath().toFile());
             } else {
                 ImageIO.write(property.getBufferedImage(), "jpg", property.getFile());
-                System.out.println("GET FILE  " + property.getFile());
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
     private void process() {
@@ -369,17 +353,16 @@ public class Main extends Application {
             } else {
                 buttonSave.setDisable(true);
                 buttonFolder.setDisable(true);
-                descriptionTf.setText("");
-                percentTf.setText("");
+                descriptionTf.setText(null);
+                percentTf.setText(null);
             }
         }
     }
 
-    private void upload(Property props, GridPane root) {
-//        boxCamera.getChildren().clear();
+    private void upload(Property props) {
         imageViewCam.setImage(null);
-        descriptionTf.setText("");
-        percentTf.setText("");
+        descriptionTf.setText(null);
+        percentTf.setText(null);
         FileChooser fileChooser = new FileChooser();
         File file = fileChooser.showOpenDialog(null);
         try {
@@ -400,28 +383,23 @@ public class Main extends Application {
         fileChooser.getExtensionFilters().add(extFilter);
         File file = fileChooser.showSaveDialog(primaryStage);
         props.setFile(file);
-
     }
 
-    private BufferedImage setFilter(String value, BufferedImage bufferedImage) throws IOException {
+    private BufferedImage setFilter(String value, BufferedImage bufferedImage) {
         setOriginalImage(bufferedImage);
         if (value == null) {
             bufferedImage = bufferedImage;
         } else if (props.getDescription() != null){
             if(props.getDescription().equals("beagle") && value.equals(BEAGLE_RED)){
-                System.out.println("APPLY RED FILTER");
                 bufferedImage = getRedImage();
             }
             else if(props.getDescription().equals("tiger cat") && value.equals(TIGERCAT_BLUE)){
-                System.out.println("APPLY BLUE FILTER");
                 bufferedImage = getBlueImage();
             }
             else if(props.getDescription().equals("mouse") && value.equals(MOUSE_GREEN)) {
-                System.out.println("APPLY GREEN FILTER");
                 bufferedImage = getGreenImage();
             }
             else {
-                System.out.println("APPLY NO FILTER");
                 bufferedImage = bufferedImage;
             }
         }
