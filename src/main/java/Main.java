@@ -47,7 +47,7 @@ public class Main extends Application {
 
     // initialize each Node
     private ImageView imageViewCam = new ImageView();
-    private ImageView imageViewCam2 = new ImageView();
+    private ImageView imageView = new ImageView();
     private ImageView imageViewPicture = new ImageView();
     private Button buttonSave = new Button("Sauvegarder");
     private Button buttonUpload = new Button("Importer");
@@ -252,6 +252,26 @@ public class Main extends Application {
         } catch (FrameGrabber.Exception e) {
             e.printStackTrace();
         }
+
+
+        Executors.newSingleThreadExecutor().execute(new Runnable() {
+            @Override
+            public void run() {
+
+                Frame frame = null;
+                new File("images").mkdir();
+                try {
+                    while (true) {
+                        frame = opengrabber.grabFrame();
+                        imageView.setImage(frameToImage2(frame));
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+        });
         Executors.newSingleThreadExecutor().execute(new Runnable() {
             @Override
             public void run() {
@@ -265,7 +285,7 @@ public class Main extends Application {
                         if (value == null){
                            value = NONE;
                         }
-                        imageViewCam.setImage(frameToImage(frame, value));
+                        imageView.setImage(frameToImage(frame, value));
                         Thread.sleep(INTERVALCAM);
                         bufferedImage = setFilter(value.toString(), bufferedImage);
                         props.setBufferedImage(bufferedImage);
@@ -372,10 +392,10 @@ public class Main extends Application {
         buttonProcess.setPadding(new Insets(10));
 
         // ROW 5
-        imageViewCam.setFitWidth(400);
-        imageViewCam.setFitHeight(400);
-        root.getChildren().add(imageViewCam);
-        GridPane.setConstraints(imageViewCam, 4, 5, 1, 1);
+        imageView.setFitWidth(400);
+        imageView.setFitHeight(400);
+        root.getChildren().add(imageView);
+        GridPane.setConstraints(imageView, 4, 5, 1, 1);
 
         imageViewPicture.setFitHeight(400);
         imageViewPicture.setFitWidth(400);
@@ -425,7 +445,7 @@ public class Main extends Application {
      * @param props
      */
     private void upload(Property props) {
-        imageViewCam.setImage(null);
+        imageView.setImage(null);
         descriptionTf.setText(null);
         percentTf.setText(null);
         buttonFolder.setDisable(true);
@@ -482,6 +502,10 @@ public class Main extends Application {
             }
         }
         return bufferedImage;
+    }
+    private WritableImage frameToImage2(Frame frame) {
+        BufferedImage bufferedImage = java2DFrameConverter.getBufferedImage(frame);
+        return SwingFXUtils.toFXImage(bufferedImage, null);
     }
 
 }
