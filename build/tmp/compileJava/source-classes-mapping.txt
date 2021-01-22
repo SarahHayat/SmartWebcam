@@ -5,9 +5,6 @@ Property.java
 TFUtils.java
  TFUtils
  TFUtils$GraphBuilder
-Test.java
- Test
- Test$1
 Main.java
  Main
  Main$1

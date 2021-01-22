@@ -270,8 +270,10 @@ public class Main extends Application {
                         bufferedImage = setFilter(value.toString(), bufferedImage);
                         props.setBufferedImage(bufferedImage);
                         props.setPath(Paths.get("images" + File.separator + "picture" + i + ".jpg"));
-                        save(props);
-                        getProperty(props);
+                        if(i % 15 == 0){
+                            save(props);
+                            getProperty(props);
+                        }
                         if (props.getDescription() != null) {
                             System.out.println(i + " : " + props.getDescription());
                             buttonSave.setDisable(false);
