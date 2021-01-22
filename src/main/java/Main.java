@@ -208,7 +208,7 @@ public class Main extends Application {
         Executors.newSingleThreadExecutor().execute(new Runnable() {
             @Override
             public void run() {
-                Frame frame;
+                Frame frame = null;
                 new File("images").mkdir();
                 int i = 0;
                 try {
