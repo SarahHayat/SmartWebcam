@@ -1,16 +1,13 @@
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.file.Path;
 
 public class Property {
     String description;
-    String image;
     float proba;
     Path path;
     BufferedImage bufferedImage;
     File file;
-
 
     public File getFile() {
         return file;
@@ -42,14 +39,6 @@ public class Property {
 
     public void setProba(float proba) {
         this.proba = proba;
-    }
-
-    public String getImage() {
-        return image;
-    }
-
-    public void setImage(String image) {
-        this.image = image;
     }
 
     public String getDescription() {

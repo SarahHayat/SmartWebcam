@@ -4,7 +4,14 @@ import java.io.IOException;
 import java.util.Arrays;
 
 public class Description {
-    public int getIndex(Tensor<Float> result , Property props) throws IOException {
+    /**
+     * Get index of element in labels.txt
+     * @param result
+     * @param props
+     * @return index
+     * @throws IOException
+     */
+    public int getIndex(Tensor<Float> result, Property props) throws IOException {
         final long[] rshape = result.shape();
         if (result.numDimensions() != 2 || rshape[0] != 1) {
             throw new RuntimeException(
@@ -14,15 +21,17 @@ public class Description {
         }
         int nlabels = (int) rshape[1];
         float[] proba = result.copyTo(new float[1][nlabels])[0];
-
         int index = maxIndex(proba);
-
-        float probabilite = proba[index]*100f;
+        float probabilite = proba[index] * 100f;
         props.setProba(probabilite);
-        System.out.println();
         return index;
     }
 
+    /**
+     * Get the best index of element
+     * @param probabilities
+     * @return best
+     */
     private static int maxIndex(float[] probabilities) {
         int best = 0;
         for (int i = 1; i < probabilities.length; ++i) {
