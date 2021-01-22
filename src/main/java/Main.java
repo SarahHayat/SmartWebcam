@@ -47,6 +47,7 @@ public class Main extends Application {
 
     // initialize each Node
     private ImageView imageViewCam = new ImageView();
+    private ImageView imageViewCam2 = new ImageView();
     private ImageView imageViewPicture = new ImageView();
     private Button buttonSave = new Button("Sauvegarder");
     private Button buttonUpload = new Button("Importer");
@@ -176,9 +177,9 @@ public class Main extends Application {
      * @return BufferedImage to Image
      * @throws IOException
      */
-    private WritableImage frameToImage(Frame frame, String value) throws IOException {
+    private WritableImage frameToImage(Frame frame, Object value) throws IOException {
         BufferedImage bufferedImage = java2DFrameConverter.getBufferedImage(frame);
-        bufferedImage = setFilter(value, bufferedImage);
+        bufferedImage = setFilter(value.toString(), bufferedImage);
         return SwingFXUtils.toFXImage(bufferedImage, null);
     }
 
@@ -261,7 +262,10 @@ public class Main extends Application {
                     while (true) {
                         frame = opengrabber.grabFrame();
                         BufferedImage bufferedImage = java2DFrameConverter.getBufferedImage(frame);
-                        imageViewCam.setImage(frameToImage(frame, value.toString()));
+                        if (value == null){
+                           value = NONE;
+                        }
+                        imageViewCam.setImage(frameToImage(frame, value));
                         Thread.sleep(INTERVALCAM);
                         bufferedImage = setFilter(value.toString(), bufferedImage);
                         props.setBufferedImage(bufferedImage);
@@ -424,6 +428,8 @@ public class Main extends Application {
         imageViewCam.setImage(null);
         descriptionTf.setText(null);
         percentTf.setText(null);
+        buttonFolder.setDisable(true);
+        buttonSave.setDisable(true);
         FileChooser fileChooser = new FileChooser();
         File file = fileChooser.showOpenDialog(null);
         try {
