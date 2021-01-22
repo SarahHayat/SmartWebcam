@@ -160,7 +160,7 @@ public class Main extends Application {
         primaryStage.show();
     }
 
-    private WritableImage frameToImage(Frame frame, Object value) throws IOException {
+    private WritableImage frameToImage(Frame frame, String value) throws IOException {
         BufferedImage bufferedImage = java2DFrameConverter.getBufferedImage(frame);
         bufferedImage = setFilter(value, bufferedImage);
         return SwingFXUtils.toFXImage(bufferedImage, null);
@@ -227,21 +227,11 @@ public class Main extends Application {
                     while (true) {
                         frame = opengrabber.grabFrame();
                         BufferedImage bufferedImage = java2DFrameConverter.getBufferedImage(frame);
-                        imageViewCam.setImage(frameToImage(frame, value));
+                        imageViewCam.setImage(frameToImage(frame, value.toString()));
                         Thread.sleep(INTERVALCAM);
-                        bufferedImage = setFilter(value, bufferedImage);
+                        bufferedImage = setFilter(value.toString(), bufferedImage);
                         props.setBufferedImage(bufferedImage);
                         props.setPath(Paths.get("images" + File.separator + "picture" + i + ".jpg"));
-//                        save(props);
-//                        if (props.getDescription() == "beagle" && value==BEAGLE_RED){
-//                            save(props);
-//                        }
-//                        else if(props.getDescription() == "tiger cat" && value==TIGERCAT_BLUE){
-//                            save(props);
-//                        }
-//                        else if(props.getDescription() == "mouse" && value==MOUSE_GREEN){
-//                            save(props);
-//                        }
                         save(props);
                         getProperty(props);
                         if (props.getDescription() != null) {
@@ -413,20 +403,20 @@ public class Main extends Application {
 
     }
 
-    private BufferedImage setFilter(Object value, BufferedImage bufferedImage) throws IOException {
+    private BufferedImage setFilter(String value, BufferedImage bufferedImage) throws IOException {
         setOriginalImage(bufferedImage);
         if (value == null) {
             bufferedImage = bufferedImage;
-        } else {
-            if(props.getDescription().equals("beagle") && value.toString().equals(BEAGLE_RED)){
+        } else if (props.getDescription() != null){
+            if(props.getDescription().equals("beagle") && value.equals(BEAGLE_RED)){
                 System.out.println("APPLY RED FILTER");
                 bufferedImage = getRedImage();
             }
-            else if(props.getDescription().equals("tiger cat") && value.toString().equals(TIGERCAT_BLUE)){
+            else if(props.getDescription().equals("tiger cat") && value.equals(TIGERCAT_BLUE)){
                 System.out.println("APPLY BLUE FILTER");
                 bufferedImage = getBlueImage();
             }
-            else if(props.getDescription().equals("mouse") && value.toString().equals(MOUSE_GREEN)) {
+            else if(props.getDescription().equals("mouse") && value.equals(MOUSE_GREEN)) {
                 System.out.println("APPLY GREEN FILTER");
                 bufferedImage = getGreenImage();
             }
