@@ -1,3 +1,4 @@
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
@@ -32,10 +33,10 @@ public class Main extends Application {
 
     private Property props = new Property();
     private final Java2DFrameConverter java2DFrameConverter = new Java2DFrameConverter();
-    final int INTERVALCAM = 1000;///you may use interval
-    private final String RED = "red";
-    private final String BLUE = "blue";
-    private final String GREEN = "green";
+    final int INTERVALCAM = 1;///you may use interval
+    private final String BEAGLE_RED = "Beagle/Red";
+    private final String TIGERCAT_BLUE = "Tiger Cat/Blue";
+    private final String MOUSE_GREEN = "Mouse/Green";
     private final String NONE = "none";
 
     private BufferedImage originalImage;
@@ -53,13 +54,15 @@ public class Main extends Application {
     private Button buttonFolder = new Button("Choix du dossier");
     private Button buttonProcess = new Button("Process");
     private Button open = new Button("Caméra");
-    private TextField definitionTf = new TextField();
     private Label pathLabel = new Label();
+    private TextField definitionTf = new TextField();
     private TextField descriptionTf = new TextField();
     private TextField percentTf = new TextField();
+    private TextField probaTf = new TextField();
     private Label definitionLabel = new Label("Definition");
-    private Label PercentLabel = new Label("Pourcentage");
-    private TextField ProbaTf = new TextField();
+    private Label percentLabel = new Label("Pourcentage");
+    private ImageView imageViewCam = new ImageView();
+    private ImageView imageViewPicture = new ImageView();
     private ComboBox comboBox = new ComboBox();
     private ObservableList<String> liste = FXCollections.observableArrayList();
 
@@ -90,7 +93,7 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
         primaryStage.setTitle("Smart Webcam");
-        liste.addAll(RED, BLUE, GREEN, NONE);
+        liste.addAll(BEAGLE_RED, TIGERCAT_BLUE, MOUSE_GREEN, NONE);
 
         comboBox.setValue("Filtres");
         comboBox.setItems(liste);
@@ -120,6 +123,18 @@ public class Main extends Application {
         buttonSave.setOnAction((action -> {
             try {
                 save(props);
+                buttonSave.setDisable(true);
+                Thread thread = new Thread(()->{
+                    try {
+                        Thread.sleep(2000);
+                        Platform.runLater(()->{
+                            buttonSave.setDisable(false);
+                        });
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                });
+                thread.start();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -141,7 +156,7 @@ public class Main extends Application {
         buttonProcess.setOnAction(event);
         addToRoot();
 
-        primaryStage.setScene(new Scene(root, 1000, 600));
+        primaryStage.setScene(new Scene(root, 1500, 1000));
         primaryStage.show();
     }
 
@@ -189,8 +204,13 @@ public class Main extends Application {
     }
 
     private void openCam() {
-        ImageView imageView = new ImageView();
+
         try {
+            definitionTf.setText(null);
+            probaTf.setText(null);
+            props.setPath(null);
+            props.setFile(null);
+            imageViewPicture.setImage(null);
             opengrabber.start();
         } catch (FrameGrabber.Exception e) {
             e.printStackTrace();
@@ -207,11 +227,21 @@ public class Main extends Application {
                     while (true) {
                         frame = opengrabber.grabFrame();
                         BufferedImage bufferedImage = java2DFrameConverter.getBufferedImage(frame);
-                        imageView.setImage(frameToImage(frame, value));
+                        imageViewCam.setImage(frameToImage(frame, value));
                         Thread.sleep(INTERVALCAM);
                         bufferedImage = setFilter(value, bufferedImage);
                         props.setBufferedImage(bufferedImage);
                         props.setPath(Paths.get("images" + File.separator + "picture" + i + ".jpg"));
+//                        save(props);
+//                        if (props.getDescription() == "beagle" && value==BEAGLE_RED){
+//                            save(props);
+//                        }
+//                        else if(props.getDescription() == "tiger cat" && value==TIGERCAT_BLUE){
+//                            save(props);
+//                        }
+//                        else if(props.getDescription() == "mouse" && value==MOUSE_GREEN){
+//                            save(props);
+//                        }
                         save(props);
                         getProperty(props);
                         if (props.getDescription() != null) {
@@ -232,18 +262,14 @@ public class Main extends Application {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-//                    descriptionLabel.setText(props.getDescription());
-//                    percentLabel.setText(String.valueOf(props.getProba()));
             }
         });
-        imageView.setFitWidth(400);
-        imageView.setFitHeight(400);
-        root.getChildren().add(imageView);
-        GridPane.setConstraints(imageView, 5, 5, 1, 1);
     }
 
     private void addToRoot() {
         root.setPadding(new Insets(20));
+//        root.setGridLinesVisible( true );
+        root.getColumnConstraints().addAll( new ColumnConstraints( 200 ), new ColumnConstraints( 200 ), new ColumnConstraints( 200 ), new ColumnConstraints( 200 ) );
         root.setVgap(15);
         root.setHgap(15);
 
@@ -299,13 +325,13 @@ public class Main extends Application {
         descriptionTf.setPadding(new Insets(10));
 
         // ROW 3
-        root.getChildren().add(PercentLabel);
-        GridPane.setConstraints(PercentLabel, COL_0, ROW_3, 1, 1);
-        PercentLabel.setPadding(new Insets(10));
+        root.getChildren().add(percentLabel);
+        GridPane.setConstraints(percentLabel, COL_0, ROW_3, 1, 1);
+        percentLabel.setPadding(new Insets(10));
 
-        root.getChildren().add(ProbaTf);
-        GridPane.setConstraints(ProbaTf, COL_1, ROW_3, 1, 1);
-        ProbaTf.setPadding(new Insets(10));
+        root.getChildren().add(probaTf);
+        GridPane.setConstraints(probaTf, COL_1, ROW_3, 1, 1);
+        probaTf.setPadding(new Insets(10));
 
         root.getChildren().add(percentTf);
         GridPane.setConstraints(percentTf, COL_2, ROW_3, 1, 1);
@@ -315,6 +341,17 @@ public class Main extends Application {
         root.getChildren().add(buttonProcess);
         GridPane.setConstraints(buttonProcess, COL_0, ROW_4, 1, 1);
         buttonProcess.setPadding(new Insets(10));
+
+        // ROW 5
+        imageViewCam.setFitWidth(400);
+        imageViewCam.setFitHeight(400);
+        root.getChildren().add(imageViewCam);
+        GridPane.setConstraints(imageViewCam, 4, 5, 1, 1);
+
+        imageViewPicture.setFitHeight(400);
+        imageViewPicture.setFitWidth(400);
+        root.getChildren().add(imageViewPicture);
+        GridPane.setConstraints(imageViewPicture, 4, 5, 1, 1);
 
     }
 
@@ -334,7 +371,7 @@ public class Main extends Application {
 
     private void process() {
         if (props.getDescription() != null) {
-            if (definitionTf.getText().contains(props.getDescription()) && props.getProba() >= Float.parseFloat(ProbaTf.getText())) {
+            if (definitionTf.getText().contains(props.getDescription()) && props.getProba() >= Float.parseFloat(probaTf.getText())) {
                 descriptionTf.setText(props.getDescription());
                 percentTf.setText(String.valueOf(props.getProba()));
                 buttonSave.setDisable(false);
@@ -349,7 +386,8 @@ public class Main extends Application {
     }
 
     private void upload(Property props, GridPane root) {
-        boxCamera.getChildren().clear();
+//        boxCamera.getChildren().clear();
+        imageViewCam.setImage(null);
         descriptionTf.setText("");
         percentTf.setText("");
         FileChooser fileChooser = new FileChooser();
@@ -357,12 +395,7 @@ public class Main extends Application {
         try {
             BufferedImage bufferedImage = ImageIO.read(file);
             WritableImage image1 = SwingFXUtils.toFXImage(bufferedImage, null);
-            ImageView imageView = new ImageView();
-            imageView.setImage(image1);
-            imageView.setFitHeight(300);
-            imageView.setFitWidth(300);
-            root.getChildren().add(imageView);
-            GridPane.setConstraints(imageView, 5, 5, 1, 1);
+            imageViewPicture.setImage(image1);
             props.setPath(file.toPath());
             props.setBufferedImage(bufferedImage);
             getProperty(props);
@@ -380,28 +413,26 @@ public class Main extends Application {
 
     }
 
-    private BufferedImage setFilter(Object value, BufferedImage bufferedImage) {
+    private BufferedImage setFilter(Object value, BufferedImage bufferedImage) throws IOException {
         setOriginalImage(bufferedImage);
         if (value == null) {
             bufferedImage = bufferedImage;
         } else {
-            switch (value.toString()) {
-                case RED:
-                    System.out.println("APPLY RED FILTER");
-                    bufferedImage = getRedImage();
-                    break;
-                case BLUE:
-                    System.out.println("APPLY BLUE FILTER");
-                    bufferedImage = getBlueImage();
-                    break;
-                case GREEN:
-                    System.out.println("APPLY GREEN FILTER");
-                    bufferedImage = getGreenImage();
-                    break;
-                default:
-                    System.out.println("APPLY NO FILTER");
-                    bufferedImage = bufferedImage;
-                    break;
+            if(props.getDescription().equals("beagle") && value.toString().equals(BEAGLE_RED)){
+                System.out.println("APPLY RED FILTER");
+                bufferedImage = getRedImage();
+            }
+            else if(props.getDescription().equals("tiger cat") && value.toString().equals(TIGERCAT_BLUE)){
+                System.out.println("APPLY BLUE FILTER");
+                bufferedImage = getBlueImage();
+            }
+            else if(props.getDescription().equals("mouse") && value.toString().equals(MOUSE_GREEN)) {
+                System.out.println("APPLY GREEN FILTER");
+                bufferedImage = getGreenImage();
+            }
+            else {
+                System.out.println("APPLY NO FILTER");
+                bufferedImage = bufferedImage;
             }
         }
         return bufferedImage;
